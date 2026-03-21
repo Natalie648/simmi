@@ -24,49 +24,55 @@ library("FactoMineR")
 
 ################ 2.Install source functions ####################
 
-source("R/prep_spatial_ts.R") #Used in step 5
-source("R/compute_spatial_window.R") #Used in step 6
-source("R/vectors_s(q).R") #Used in step 7
-source("R/vectors_p(r).R") #Used in step 8
-source("R/tsfolds.R") #Used in step 8
-source("R/lasso_ts.R") #One of two methods that can be used in step 8
-source("R/enet_ts_strict.R") #One of two methods that can be used in step 8
-source("R/pooledMASE.R") #Used in step 9
-source("R/sigtest.R") #Used in step 10
-source("R/repair.R") #Used in step 13
-source("R/rv_similarity.R") #Used in step 14
+source("R/prep_spatial_ts.R") #Used in step 6
+source("R/compute_spatial_window.R") #Used in step 7
+source("R/vectors_s(q).R") #Used in step 8
+source("R/vectors_p(r).R") #Used in step 9
+source("R/tsfolds.R") #Used in step 9
+source("R/lasso_ts.R") #One of two methods that can be used in step 9
+source("R/enet_ts_strict.R") #One of two methods that can be used in step 9
+source("R/pooledMASE.R") #Used in step 10
+source("R/sigtest.R") #Used in step 11
+source("R/repair.R") #Used in step 14
+source("R/rv_similarity.R") #Used in step 15
 
-############# 3.Adjust default parameters as necessary ##############
+############# 3.Specify data inputs ##############
 
 file_path <- "data/Additional file 2.xlsx" #File path of original input data
-g=1 #Sheet number of working variable
+g <- 1 #Sheet number of working variable
 
-d=17 #Column number of series displaying irregular pattern (in original data frame)
-f=4 #Column number of chosen reference series for comparing data similarity
+d <- 17 #Column number of series displaying irregular pattern (in original data frame)
+
+k_start <- 295   # ← row where irregular pattern STARTS
+k_end   <- 588   # ← row where irregular pattern ENDS
+
+f<- 4 #Column number of chosen reference series for comparing data similarity
+
+############# 4.Adjust default model parameters as necessary ##############
 
 theta <- 24 # Diurnal periodicity of the data. For hourly data use theta = 24
 
 k_t <- 5*theta # Desired degree of shift forwards and backwards. Algorithm will reduce k_t accordingly if there are less than k_t time periods on either side of the irregular pattern.
 
-k_start <- 295   # ← row where your irregular pattern STARTS
-k_end   <- 588   # ← row where your irregular pattern ENDS
+nfolds <- 10 #Chosen number of time folds for contiguous block time-series cross-validation
 
-nfolds=10 #Chosen number of time folds for contiguous block time-series cross-validation
+p <- 2 #Lagged/leading features included in imputation model from lag -p:p
 
-p=2 #Lagged/leading features included in imputation model from lag -p:p
+m <- 5 #Number of imputations
 
-m=5 #Number of imputations
+step <- 1 #Change to 24 if you wish to use a seasonal step for hourly data
 
-step=1 #Change to 24 if you wish to use a seasonal step for hourly data
+null <- 1 #If using a seasonal step, recommended that you reduce null value for sig testing 
 
-null=1 #If using a seasonal step, recommended that you reduce null value for sig testing 
 method="enet_ts_strict" #Either "enet_ts_strict" or "lasso_ts" 
 
-########## 4.Load univariate spatial data for the working variable #######
+nw_lag <- 24  # ←←← Change this to auto or to any lag you want (e.g. 12, 48, 0)
+
+########## 5.Load univariate spatial data for the working variable #######
 
 my_spatial_ts_orig <- read_excel(file_path, sheet = g ) 
 
-########## 5.Prepare working data frame ##############
+########## 6.Prepare working data frame ##############
 
 my_spatial_ts=my_spatial_ts_orig %>%  relocate(d) 
 
@@ -79,7 +85,7 @@ my_spatial_ts$Month=as.factor(month(my_spatial_ts$Date))
 
 my_spatial_ts <- prep_spatial_ts(my_spatial_ts)
 
-########## 6.Determine parameters for spatial window #######
+########## 7.Determine parameters for spatial window #######
 
 window_params <- compute_spatial_window(
   my_spatial_ts = my_spatial_ts,
@@ -94,7 +100,7 @@ l_end   <- window_params$l_end
 k       <- window_params$k
 k_t     <- window_params$k_t   # possibly reduced
 
-################ 7.Generate s(q) vectors ##############
+################ 8.Generate s(q) vectors ##############
 
 s0_shifts <- generate_s0_shifts(
   my_spatial_ts = my_spatial_ts,
@@ -109,7 +115,7 @@ Series_irregular <- s0_shifts$Series_irregular
 shift            <- s0_shifts$shift
 
 
-############## 8.Generate p(r) vectors for r=1:m ################ 
+############## 9.Generate p(r) vectors for r=1:m ################ 
 
 Pr_imputed <- generate_pr_imputed(
   my_spatial_ts = my_spatial_ts,   
@@ -122,7 +128,7 @@ Pr_imputed <- generate_pr_imputed(
   method        = method          
 )
 
-############## 9.Generate pooled MASE for each value of q ############
+############## 10.Generate pooled MASE for each value of q ############
 
 mase_results <- compute_pooled_mase(
   Pr_imputed = Pr_imputed,
@@ -135,7 +141,7 @@ mase_results <- compute_pooled_mase(
 MASE       <- mase_results$MASE
 PooledMASE <- mase_results$PooledMASE
 
-### 10.Perform significance testing on Pooled MASE values ##########
+### 11.Perform significance testing on Pooled MASE values ##########
 
 signif_results <- compute_mase_significance(
   Pr_imputed = Pr_imputed,
@@ -146,7 +152,7 @@ signif_results <- compute_mase_significance(
   k_t        = k_t,
   step       = step,
   null       = null,      
-  nw_lag     = 24         # ←←← Change this to auto or to any lag you want (e.g. 12, 48, 0)
+  nw_lag     = nw_lag         
 )
 
 
@@ -154,7 +160,7 @@ p_vec     <- signif_results$p_vec
 stat_vec  <- signif_results$stat_vec
 df_vec    <- signif_results$df_vec
 
-########### 11.Extract, save and display results #################
+########### 12.Extract, save and display results #################
 
 shifts <- -k_t:k_t
 results <- data.frame(Shift = shifts, PooledMASE = PooledMASE, p_value = p_vec)
@@ -166,7 +172,7 @@ cat("Min pooled MASE:", min(PooledMASE), "\n")
 cat("(Less than null) p-value for optimal shift:", p_vec[opt_shift_idx], "\n")
 cat("(Greater than null) p-value for optimal shift:", 1-p_vec[opt_shift_idx], "\n")
 
-### 12.Generate plot of pooled MASE for different degrees of shift #####
+### 13.Generate plot of pooled MASE for different degrees of shift #####
 
 ylim=c(0,9) #Adjust as necessary
 
@@ -185,7 +191,7 @@ dev.off()
 
 #Note: If you are unhappy with the results (e.g. if optimal shift is associated with a pooled MASE significantly greater than 1), then re-run the algorithm using a higher value of k_t.  Otherwise proceed with repair of full multivariate set.
 
-##### 13.Repair irregular pattern in multivariate data ########
+##### 14.Repair irregular pattern in multivariate data ########
 
 sheetnames <- readxl::excel_sheets(file_path)
 j=length(sheetnames)
@@ -215,7 +221,7 @@ writexl::write_xlsx(
   path = "output/my_spatial_ts_repaired.xlsx"
 )
 
-## 14.Assess improvement in data similarity between spatial series ####
+## 15.Assess improvement in data similarity between spatial series ####
 
 # Empty list to store columns
 col_list <- list()
