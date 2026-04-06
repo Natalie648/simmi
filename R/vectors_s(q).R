@@ -11,24 +11,27 @@
 #   l             : total window length
 #   k             : length of the irregular pattern
 #   k_t           : maximum number of shifts in each direction
+#   theta         : periodicity of the data
 #
 # Returns : a list containing:
 #   $Series_irregular : numeric vector of length l (S0 with NAs)
 #   $shift            : numeric matrix with (2*k_t + 1) columns
 # ===================================================================
 
-generate_s0_shifts <- function(my_spatial_ts, l_start, l_end, l, k, k_t) {
+generate_s0_shifts <- function(my_spatial_ts, l_start, l_end, l, k, k_t, theta) {
   
   # Extract the window around the irregular pattern (column 1)
-  Series_irregular <- my_spatial_ts[c(l_start:l_end), 1]
+  Series_irregular <- my_spatial_ts[c(l_start:l_end), 1, drop = TRUE]
+  Series_irregular <- as.numeric(Series_irregular)
   
   # Center the irregular pattern by adding NA padding on both sides
   pad <- (l - k) / 2
-  Series_irregular[1:pad, 1] <- NA
-  Series_irregular[(pad + k + 1):l, 1] <- NA
+  Series_irregular[1:pad] <- NA
+  Series_irregular[(pad + k + 1):l] <- NA
   
-  # Convert to plain numeric vector (required for shifting)
-  Series_irregular <- Series_irregular[[1]]
+  # Interpolate any missing values within the irregular sequence 
+  Series_irregular[(pad+1):(pad+k)] <- as.numeric(forecast::na.interp(ts(Series_irregular[(pad+1):(pad+k)], frequency=theta)))
+  
   
   # Create the full shift matrix s(q): each column is a shifted version
   shift <- as.matrix(

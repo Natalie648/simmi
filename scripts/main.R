@@ -10,6 +10,7 @@
 #install.packages("lubridate")
 #install.packages("writexl")
 #install.packages("FactoMineR")
+#install.packages("forecast")
 
 library("readxl")
 library("dplyr")
@@ -21,6 +22,7 @@ library("sandwich")
 library("lubridate")
 library("writexl")
 library("FactoMineR")
+library("forecast")
 
 ################ 2.Install source functions ####################
 
@@ -66,7 +68,6 @@ null <- 1 #If using a seasonal step, recommended that you reduce null value for 
 
 method="enet_ts_strict" #Either "enet_ts_strict" or "lasso_ts" 
 
-nw_lag <- 24  # ←←← Change this to auto or to any lag you want (e.g. 12, 48, 0)
 
 ########## 5.Load univariate spatial data for the working variable #######
 
@@ -81,6 +82,8 @@ my_spatial_ts=my_spatial_ts_orig %>%  relocate(d)
 my_spatial_ts=my_spatial_ts %>% relocate(Date, .after = last_col()) 
 my_spatial_ts=my_spatial_ts %>% relocate(Hour, .after = last_col()) 
 my_spatial_ts$Hour=as.factor(my_spatial_ts$Hour)
+
+#If irregular period spans more than 1 month, then include month covariate too
 my_spatial_ts$Month=as.factor(month(my_spatial_ts$Date))
 
 my_spatial_ts <- prep_spatial_ts(my_spatial_ts)
@@ -108,7 +111,8 @@ s0_shifts <- generate_s0_shifts(
   l_end         = l_end,
   l             = l,
   k             = k,
-  k_t           = k_t
+  k_t           = k_t,
+  theta         = theta
 )
 
 Series_irregular <- s0_shifts$Series_irregular
@@ -151,8 +155,7 @@ signif_results <- compute_mase_significance(
   m          = m,
   k_t        = k_t,
   step       = step,
-  null       = null,      
-  nw_lag     = nw_lag         
+  null       = null
 )
 
 

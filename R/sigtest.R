@@ -14,7 +14,7 @@
 #   k_t          : maximum shift
 #   step         : step size used in MASE
 #   null         : null value for MASE (default = 1)
-#   nw_lag       : Newey-West lag (e.g. 24 for hourly data). Adjustable! Auto lag also often used
+
 #
 # Returns: a list containing
 #   $w_vec     : within-imputation variance (for MAE)
@@ -33,8 +33,7 @@ compute_mase_significance <- function(Pr_imputed,
                                       m,
                                       k_t,
                                       step,
-                                      null = 1,
-                                      nw_lag = 24) {
+                                      null) {
   
   n_shifts <- 2 * k_t + 1
   
@@ -50,7 +49,7 @@ compute_mase_significance <- function(Pr_imputed,
     overlap_rows <- which(!is.na(shift[, i]))
     n <- length(overlap_rows)
     
-    if (n < 2) {                     # Skip if no overlap
+    if (n < 50) {                     
       p_vec[i] <- NA
       next
     }
@@ -77,7 +76,7 @@ compute_mase_significance <- function(Pr_imputed,
       lm_mod <- lm(abs_errors ~ 1)
       hac_var <- sandwich::NeweyWest(
         lm_mod,
-        lag      = nw_lag,      # ←←← Adjustable via function argument
+        lag      = min(floor(bwNeweyWest(lm_mod)),floor(4*(n/100)^(2/9))),      # ←←← Adjustable via function argument
         prewhite = FALSE,
         adjust   = TRUE
       )[1, 1]
@@ -86,8 +85,10 @@ compute_mase_significance <- function(Pr_imputed,
     }
     
     w_vec[i]     <- mean(var_a, na.rm = TRUE)
-    b_vec[i]     <- var(MAE, na.rm = TRUE) / (m - 1)
+    b_vec[i]     <- var(MAE, na.rm = TRUE)
     T_MAE        <- w_vec[i] + (1 + 1/m) * b_vec[i]
+    T_MAE_vec[i] <- T_MAE                    
+    T_MASE_vec[i] <- T_MAE / naive^2         
     
     if (T_MAE <= 0 || is.na(T_MAE)) {
       p_vec[i] <- NA
@@ -118,3 +119,5 @@ compute_mase_significance <- function(Pr_imputed,
     p_vec  = p_vec
   ))
 }
+
+

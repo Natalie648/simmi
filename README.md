@@ -64,7 +64,7 @@ Download from: <https://cran.r-project.org/>
 
 **2. Install required packages**
 
-`install.packages(c( "readxl", "dplyr", "Metrics", "data.table", "mice", "glmnet", "sandwich", "lubridate", "writexl", "FactoMineR" ))`
+`install.packages(c( "readxl", "dplyr", "Metrics", "data.table", "mice", "glmnet", "sandwich", "lubridate", "writexl", "FactoMineR", "forecast" ))`
 
 ## Usage
 
@@ -92,11 +92,10 @@ Adjust the following default model parameters as necessary:
 -   `step` → for computing naive forecast
 -   `null` → null value for significance testing
 -   `method` → "enet_ts_strict" or "lasso_ts"
--   `nw_lag` → number of time lags considered when computing Newey-West standard errors
 
 **3. Adjust code for data preprocessing**
 
-The temporary working data frame must incorporate relevant time covariates as factor variables in the end columns. Review lines 77-82 of the `"main.R"` script and either comment out or tweak code as necessary.
+The temporary working data frame must incorporate relevant time covariates as factor variables in the end columns. Review lines 80-87 of the `"main.R"` script and either comment out or tweak code as necessary.
 
 **4. Run the entire main script**
 
