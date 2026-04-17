@@ -12,7 +12,7 @@ The framework further incorporates a repair mechanism that facilitates correctio
 
 **Input Data Requirements**
 
-The input excel file should:
+The input Excel file should:
 
 -   Contain one sheet per univariate spatial set which...
     -   Includes a date/time column
@@ -22,7 +22,7 @@ The input excel file should:
 
 **Pipeline:**
 
--   Loads data for the chosen working variable (i.e. for one specified excel sheet only)
+-   Loads data for the chosen working variable (i.e. for one specified Excel sheet only)
 -   Prepares the working data frame
 -   Computes sufficient spatio-temporal window
 -   Generates shifted data representations
@@ -30,7 +30,7 @@ The input excel file should:
 -   Computes the pooled imputation error for each data shift
 -   Performs statistical significance testing on the imputation error
 -   Extracts the optimum shift
--   Sequentially repairs period of irregular pattern for each variable within the input data file (i.e. across all excel sheets)
+-   Sequentially repairs period of irregular pattern for each variable within the input data file (i.e. across all Excel sheets)
 -   Assesses impact of the data repair by computing RV similarity versus a chosen reference location, before and after the repair
 
 ------------------------------------------------------------------------
@@ -70,7 +70,7 @@ Download from: <https://cran.r-project.org/>
 
 If using the example input data provided (`"Additional file 2.xlsx"`), simply open R or RStudio, ensure your working directory is set to the saved location of the `simmi` project folder, and run `source("scripts/main.R")`.
 
-If using your own data, save the excel file in the `data/` folder, open the primary analysis script `"scripts/main.R"` and adjust the code as follows:
+If using your own data, save the Excel file in the `data/` folder, open the primary analysis script `"scripts/main.R"` and adjust the code as follows:
 
 **1. Set up input data** -
 
@@ -95,7 +95,7 @@ Adjust the following default model parameters as necessary:
 
 **3. Adjust code for data preprocessing**
 
-The temporary working data frame must incorporate relevant time covariates as factor variables in the end columns. Review lines 80-87 of the `"main.R"` script and either comment out or tweak code as necessary.
+The temporary working data frame must incorporate relevant time covariates as factor variables in the end columns. Review lines 68-75 of the `"main.R"` script and either comment out or tweak code as necessary.
 
 **4. Run the entire main script**
 
