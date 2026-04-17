@@ -6,9 +6,9 @@ This project implements a workflow for returning a sequence of displaced attribu
 
 The computational framework relies on the generation of shifted data representations, and on performing multiple imputation via chained equations using penalised regression models (LASSO or Elastic Net) that depend on time series block validation. The mean absolute scaled error (MASE) relating to each temporal shift is pooled across imputations, and is used to identify the optimum data representation.
 
-To determine whether or not the data has been shifted far enough, one-tailed significance testing of the minimum pooled imputation error is conducted by implementing Rubin's rules, and using Newey-West heteroskedasticity and autocorrelation consistent (HAC) standard errors to account for temporal dependence during estimation of within-imputation variance.
+To assist in subjectively determining whether or not the data has been shifted far enough, one-tailed significance testing of the minimum pooled imputation error is conducted by implementing Rubin's rules, and using Newey-West heteroskedasticity and autocorrelation consistent (HAC) standard errors to account for temporal dependence during estimation of within-imputation variance.
 
-The framework further incorporates a repair mechanism that facilitates correction of potentially multiple (multivariate) series commonly affected by the same error. The pipeline ends with an evaluation of the repair by assessing RV data similarity versus a chosen reference location.
+The framework further incorporates a repair mechanism that facilitates correction of potentially multiple (multivariate) series commonly affected by the same error. The pipeline ends with an evaluation of the impact of the repair by assessing RV data similarity versus a chosen reference location.
 
 **Input Data Requirements**
 
@@ -24,14 +24,14 @@ The input excel file should:
 
 -   Loads data for the chosen working variable (i.e. for one specified excel sheet only)
 -   Prepares the working data frame
--   Computes required spatio-temporal window
+-   Computes sufficient spatio-temporal window
 -   Generates shifted data representations
 -   Generates imputed datasets
 -   Computes the pooled imputation error for each data shift
 -   Performs statistical significance testing on the imputation error
 -   Extracts the optimum shift
 -   Sequentially repairs period of irregular pattern for each variable within the input data file (i.e. across all excel sheets)
--   Assesses improvement by computing RV similarity versus chosen reference location
+-   Assesses impact of the data repair by computing RV similarity versus a chosen reference location, before and after the repair
 
 ------------------------------------------------------------------------
 

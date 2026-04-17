@@ -35,6 +35,7 @@ source("R/lasso_ts.R") #One of two methods that can be used in step 9
 source("R/enet_ts_strict.R") #One of two methods that can be used in step 9
 source("R/pooledMASE.R") #Used in step 10
 source("R/sigtest.R") #Used in step 11
+source("R/longest_na_run.R") #Used in step 12
 source("R/repair.R") #Used in step 14
 source("R/rv_similarity.R") #Used in step 15
 
@@ -121,7 +122,7 @@ shift            <- s0_shifts$shift
 
 ############## 9.Generate p(r) vectors for r=1:m ################ 
 
-Pr_imputed <- generate_pr_imputed(
+result <- generate_pr_imputed(
   my_spatial_ts = my_spatial_ts,   
   l_start       = l_start,
   l_end         = l_end,
@@ -131,6 +132,8 @@ Pr_imputed <- generate_pr_imputed(
   m             = m,
   method        = method          
 )
+
+list2env(result, envir = .GlobalEnv)
 
 ############## 10.Generate pooled MASE for each value of q ############
 
@@ -174,6 +177,11 @@ cat("Optimal shift:", shifts[opt_shift_idx], "\n")
 cat("Min pooled MASE:", min(PooledMASE), "\n")
 cat("(Less than null) p-value for optimal shift:", p_vec[opt_shift_idx], "\n")
 cat("(Greater than null) p-value for optimal shift:", 1-p_vec[opt_shift_idx], "\n")
+cat("Longest interpolated gap in irregular series:",longest_na_run(my_spatial_ts_orig[[d]][k_start:k_end]), "\n")
+cat("Percentage of total data missing within irregular series:",round(sum(is.na(my_spatial_ts_orig[(k_start:k_end),d]))/(k_end-k_start+1)*100,2) ,"\n")
+cat("Percentage of total data missing within spatio-temporal window:", percent_missing ,"\n")
+cat("Average between-series correlation within spatio-temporal window:", avg_cor ,"\n")
+
 
 ### 13.Generate plot of pooled MASE for different degrees of shift #####
 

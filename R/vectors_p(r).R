@@ -5,6 +5,8 @@
 #   - Subsets to the spatial window [l_start : l_end]
 #   - Keeps only columns with ≥ 40% observed values
 #   - Blanks out the irregular pattern period in the target column (column 1)
+#   - Determines percentage of missing data in resulting data frame
+#   - Determines strength of between-series correlation in resulting data frame
 #   - Runs MICE using custom time-series method ("enet_ts_strict" or "lasso_ts")
 #   - Returns the m imputed versions of the target series
 #
@@ -68,14 +70,43 @@ generate_pr_imputed <- function(my_spatial_ts,
   df[na_start:na_end, 1] <- NA
   
   # -----------------------------------------------------------------
-  # 5. Define imputation methods and apply custom TS method to all numeric columns
+  # 5. Determine percentage of data missingness in resulting data frame
+  # -----------------------------------------------------------------
+  
+  total_cells <- nrow(df) * ncol(df)
+  missing_cells <- sum(is.na(df))
+  percent_missing <- round((missing_cells / total_cells) * 100, 1)
+  
+  # -----------------------------------------------------------------
+  # 6. Determine strength of between-series correlation in resulting data frame
+  # -----------------------------------------------------------------
+  
+    # Select only numeric columns
+    num_df <- df[sapply(df, is.numeric)]
+    
+    if (ncol(num_df) < 2) {
+      stop("Dataframe must have at least 2 numeric columns")
+    }
+    
+    # Compute correlation matrix
+    cor_matrix <- cor(num_df, use = "pairwise.complete.obs", method = "pearson")
+    
+    # Remove diagonal (self-correlations = 1) and get upper triangle only
+    cor_matrix[lower.tri(cor_matrix, diag = TRUE)] <- NA
+    
+    # Calculate average correlation
+    avg_cor <- round(mean(cor_matrix, na.rm = TRUE),4)
+  
+  
+  # -----------------------------------------------------------------
+  # 7. Define imputation methods and apply custom TS method to all numeric columns
   # -----------------------------------------------------------------
   meth <- make.method(df)
   num_numeric_final <- sum(sapply(df, is.numeric))
   meth[1:num_numeric_final] <- method
   
   # -----------------------------------------------------------------
-  # 6. Run MICE
+  # 8. Run MICE
   # -----------------------------------------------------------------
   imp <- mice(
     data   = df,
@@ -87,10 +118,14 @@ generate_pr_imputed <- function(my_spatial_ts,
   )
   
   # -----------------------------------------------------------------
-  # 7. Extract the m imputations of the target series
+  # 9. Extract the m imputations of the target series
   # -----------------------------------------------------------------
   data_imp   <- complete(imp, "repeated")
   Pr_imputed <- data_imp[, 1:m, drop = FALSE]
   
-  return(Pr_imputed)
+  return(list(
+    Pr_imputed      = Pr_imputed,
+    percent_missing = percent_missing,
+    avg_cor = avg_cor
+  ))
 }
