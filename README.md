@@ -95,7 +95,7 @@ Adjust the following default model parameters as necessary:
 
 **3. Adjust code for data preprocessing**
 
-The temporary working data frame must incorporate relevant time covariates as factor variables in the end columns. Review lines 68-75 of the `"main.R"` script and either comment out or tweak code as necessary.
+The temporary working data frame must incorporate relevant time covariates as factor variables in the end columns. Review step 2 of the `"main.R"` script and either comment out or tweak code as necessary.
 
 **4. Run the entire main script**
 

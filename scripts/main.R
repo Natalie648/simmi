@@ -11,6 +11,7 @@
 #install.packages("writexl")
 #install.packages("FactoMineR")
 #install.packages("forecast")
+#install.packages("naniar")
 
 library("readxl")
 library("dplyr")
@@ -23,6 +24,7 @@ library("lubridate")
 library("writexl")
 library("FactoMineR")
 library("forecast")
+library("naniar")
 
 source("R/prep_spatial_ts.R") #Used in step 2
 source("R/compute_spatial_window.R") #Used in step 3
@@ -51,11 +53,11 @@ f<- 4 #Column number of chosen reference series for comparing data similarity
 theta <- 24 # Periodicity of the data. For hourly data use theta = 24
 k_t <- 5*theta # Desired degree of shift forwards and backwards. Algorithm will reduce k_t accordingly if there are less than k_t time periods on either side of the irregular pattern.
 nfolds <- 10 #Chosen number of time folds for contiguous block time-series cross-validation
-p <- 2 #Lagged/leading features included in imputation model from lag -p:p
+p <- 0 #Lagged/leading features included in imputation model from lag -p:p
 m <- 5 #Number of imputations
 step <- 1 #Change to 24 if you wish to use a seasonal step for hourly data
 null <- 1 #If using a seasonal step, recommended that you reduce null value for sig testing 
-method="enet_ts_strict" #Either "enet_ts_strict" or "lasso_ts" 
+method="lasso_ts" #Either "enet_ts_strict" or "lasso_ts" 
 
 #Load univariate spatial data for the working variable
 
@@ -155,21 +157,28 @@ p_vec     <- signif_results$p_vec
 stat_vec  <- signif_results$stat_vec
 df_vec    <- signif_results$df_vec
 
-########### 8.Extract, save and display results #################
+########### 8.Identify the optimal shift #################
+
+#Extract, save and display results
 
 shifts <- -k_t:k_t
 results <- data.frame(Shift = shifts, PooledMASE = PooledMASE, p_value = p_vec)
 write.csv(results, "output/results.csv",row.names = FALSE)
 
 opt_shift_idx <- which.min(PooledMASE)
-cat("Optimal shift:", shifts[opt_shift_idx], "\n")
-cat("Min pooled MASE:", min(PooledMASE), "\n")
-cat("(Less than null) p-value for optimal shift:", p_vec[opt_shift_idx], "\n")
-cat("(Greater than null) p-value for optimal shift:", 1-p_vec[opt_shift_idx], "\n")
-cat("Longest interpolated gap in irregular series:",longest_na_run(my_spatial_ts_orig[[d]][k_start:k_end]), "\n")
-cat("Percentage of total data missing within irregular series:",round(sum(is.na(my_spatial_ts_orig[(k_start:k_end),d]))/(k_end-k_start+1)*100,2) ,"\n")
-cat("Percentage of total data missing within spatio-temporal window:", percent_missing ,"\n")
-cat("Average between-series correlation within spatio-temporal window:", avg_cor ,"\n")
+
+sink("output/repair_summary.txt")
+cat("=== REPAIR SUMMARY ===\n\n")
+cat("Optimal shift:                               ", shifts[opt_shift_idx], "\n")
+cat("Min pooled MASE:                             ", round(min(PooledMASE), 4), "\n")
+cat("p-value (MASE < null):                       ", round(p_vec[opt_shift_idx], 4), "\n")
+cat("p-value (MASE > null):                       ", round(1 - p_vec[opt_shift_idx], 4), "\n")
+cat("Longest NA gap in irregular series:          ", longest_na_run(my_spatial_ts_orig[[d]][k_start:k_end]), "\n")
+cat("Missing % in irregular series:               ", round(sum(is.na(my_spatial_ts_orig[(k_start:k_end), d])) / (k_end - k_start + 1) * 100, 2), "%\n")
+cat("Missing % in window:                         ", round(percent_missing, 2), "%\n")
+cat("MCAR test p-value:                           ", round(mcar_pval, 4), "\n")
+cat("Avg between-series correlation in window:    ", round(avg_cor, 4), "\n")
+sink()
 
 #Generate plot of pooled MASE for different degrees of shift 
 
