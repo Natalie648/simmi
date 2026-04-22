@@ -53,11 +53,11 @@ f<- 4 #Column number of chosen reference series for comparing data similarity
 theta <- 24 # Periodicity of the data. For hourly data use theta = 24
 k_t <- 5*theta # Desired degree of shift forwards and backwards. Algorithm will reduce k_t accordingly if there are less than k_t time periods on either side of the irregular pattern.
 nfolds <- 10 #Chosen number of time folds for contiguous block time-series cross-validation
-p <- 0 #Lagged/leading features included in imputation model from lag -p:p
+p <- 2 #Lagged/leading features included in imputation model from lag -p:p
 m <- 5 #Number of imputations
 step <- 1 #Change to 24 if you wish to use a seasonal step for hourly data
 null <- 1 #If using a seasonal step, recommended that you reduce null value for sig testing 
-method="lasso_ts" #Either "enet_ts_strict" or "lasso_ts" 
+method="enet_ts_strict" #Either "enet_ts_strict" or "lasso_ts" 
 
 #Load univariate spatial data for the working variable
 
