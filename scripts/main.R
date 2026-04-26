@@ -53,7 +53,7 @@ nfolds <- 10 #Chosen number of time folds for contiguous block time-series cross
 p <- 0 #Lagged/leading features included in imputation model from lag -p:p
 m <- 5 #Number of imputations
 step <- 1 #Change to 24 if you wish to use a seasonal step for hourly data
-method="lasso_ts" #Either "enet_ts_strict" or "lasso_ts" 
+method="enet_ts_strict" #Either "enet_ts_strict" or "lasso_ts" 
 
 #Load univariate spatial data for the working variable
 
