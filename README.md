@@ -4,9 +4,7 @@
 
 This project implements a workflow for returning a sequence of displaced attribute values to their true time points, within spatially-correlated sensor data that exhibits irregular pattern due to timestamp error. The workflow has been specifically developed for application to multivariate air monitoring data, though may be generalizable to other forms of spatially-correlated time series too.
 
-The computational framework relies on the generation of shifted data representations, and on performing multiple imputation via chained equations using penalised regression models (LASSO or Elastic Net) that depend on time series block validation. The mean absolute scaled error (MASE) relating to each temporal shift is pooled across imputations, and is used to identify the optimum data representation.
-
-To assist in subjectively determining whether or not the data has been shifted far enough, one-tailed significance testing of the minimum pooled imputation error is conducted by implementing Rubin's rules, and using Newey-West heteroskedasticity and autocorrelation consistent (HAC) standard errors to account for temporal dependence during estimation of within-imputation variance.
+The computational framework relies on the generation of shifted data representations, and on performing multiple imputation via chained equations using penalised regression models (LASSO or Elastic Net) that depend on time series block validation. The mean absolute scaled error (MASE) relating to each temporal shift is pooled across imputations, and is used as a descriptive measure to identify the optimum data representation.
 
 The framework further incorporates a repair mechanism that facilitates correction of potentially multiple (multivariate) series commonly affected by the same error. The pipeline ends with an evaluation of the impact of the repair by assessing RV data similarity versus a chosen reference location.
 
@@ -28,10 +26,9 @@ The input Excel file should:
 -   Generates shifted data representations
 -   Generates imputed datasets
 -   Computes the pooled imputation error for each data shift
--   Performs statistical significance testing on the imputation error
 -   Extracts the optimum shift
 -   Sequentially repairs period of irregular pattern for each variable within the input data file (i.e. across all Excel sheets)
--   Assesses impact of the data repair by computing RV similarity versus a chosen reference location, before and after the repair
+-   Assesses improvement in data structure by computing RV similarity versus a chosen reference location, before and after the repair
 
 ------------------------------------------------------------------------
 
@@ -64,7 +61,7 @@ Download from: <https://cran.r-project.org/>
 
 **2. Install required packages**
 
-`install.packages(c( "readxl", "dplyr", "Metrics", "data.table", "mice", "glmnet", "sandwich", "lubridate", "writexl", "FactoMineR", "forecast" ))`
+`install.packages(c( "readxl", "dplyr", "Metrics", "data.table", "mice", "glmnet", "lubridate", "writexl", "FactoMineR", "forecast", "VIM"))`
 
 ## Usage
 
@@ -90,7 +87,6 @@ Adjust the following default model parameters as necessary:
 -   `m` → number of imputations
 -   `p` → number of lagged/leading features to be included
 -   `step` → for computing naive forecast
--   `null` → null value for significance testing
 -   `method` → "enet_ts_strict" or "lasso_ts"
 
 **3. Adjust code for data preprocessing**
@@ -104,13 +100,19 @@ The temporary working data frame must incorporate relevant time covariates as fa
 The script generates several outputs in the `output/` folder:
 
 -   `results.csv`\
-    → pooled MASE and p-values across shifts
+    → pooled MASE across shifts
 
--   `plot.png`\
+-   `pooledMASE_plot.png`\
     → visualization of pooled MASE vs shift
+
+-   `missingness_plot.png`\
+    → matrix plot of missingness pattern within the data window
 
 -   `my_spatial_ts_repaired.xlsx`\
     → repaired multivariate time-series data
+
+-   `repair_summary.txt`\
+    → descriptive statistics characterizing the repair
 
 -   `similarity.csv`\
     → RV similarity versus reference location before and after repair
@@ -133,5 +135,4 @@ This work utilises open-source R packages and builds upon established methodolog
 -   Time-series forecasting
 -   Penalised regression
 -   Multiple imputation via chained equations
--   Statistical hypothesis testing
 -   Multivariate similarity analysis

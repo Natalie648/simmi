@@ -6,12 +6,11 @@
 #install.packages("data.table")
 #install.packages("mice")
 #install.packages("glmnet")
-#install.packages("sandwich") # For Newey-West HAC standard errors
 #install.packages("lubridate")
 #install.packages("writexl")
 #install.packages("FactoMineR")
 #install.packages("forecast")
-#install.packages("naniar")
+#install.packages("VIM")
 
 library("readxl")
 library("dplyr")
@@ -19,12 +18,11 @@ library("Metrics")
 library("data.table")
 library("mice")
 library("glmnet")
-library("sandwich") 
 library("lubridate")
 library("writexl")
 library("FactoMineR")
 library("forecast")
-library("naniar")
+library("VIM")
 
 source("R/prep_spatial_ts.R") #Used in step 2
 source("R/compute_spatial_window.R") #Used in step 3
@@ -34,10 +32,9 @@ source("R/tsfolds.R") #Used in step 5
 source("R/lasso_ts.R") #One of two methods that can be used in step 5
 source("R/enet_ts_strict.R") #One of two methods that can be used in step 5
 source("R/pooledMASE.R") #Used in step 6
-source("R/sigtest.R") #Used in step 7
-source("R/longest_na_run.R") #Used in step 8
-source("R/repair.R") #Used in step 9
-source("R/rv_similarity.R") #Used in step 10
+source("R/longest_na_run.R") #Used in step 7
+source("R/repair.R") #Used in step 8
+source("R/rv_similarity.R") #Used in step 9
 
 ############# 2.Parameter specification and data loading ##############
 
@@ -56,8 +53,7 @@ nfolds <- 10 #Chosen number of time folds for contiguous block time-series cross
 p <- 0 #Lagged/leading features included in imputation model from lag -p:p
 m <- 5 #Number of imputations
 step <- 1 #Change to 24 if you wish to use a seasonal step for hourly data
-null <- 1 #If using a seasonal step, recommended that you reduce null value for sig testing 
-method="enet_ts_strict" #Either "enet_ts_strict" or "lasso_ts" 
+method="lasso_ts" #Either "enet_ts_strict" or "lasso_ts" 
 
 #Load univariate spatial data for the working variable
 
@@ -139,30 +135,13 @@ mase_results <- compute_pooled_mase(
 MASE       <- mase_results$MASE
 PooledMASE <- mase_results$PooledMASE
 
-### 7.Perform significance testing on Pooled MASE values ##########
 
-signif_results <- compute_mase_significance(
-  Pr_imputed = Pr_imputed,
-  shift      = shift,
-  MASE       = MASE,
-  PooledMASE = PooledMASE,
-  m          = m,
-  k_t        = k_t,
-  step       = step,
-  null       = null
-)
-
-
-p_vec     <- signif_results$p_vec      
-stat_vec  <- signif_results$stat_vec
-df_vec    <- signif_results$df_vec
-
-########### 8.Identify the optimal shift #################
+########### 7.Identify the optimal shift #################
 
 #Extract, save and display results
 
 shifts <- -k_t:k_t
-results <- data.frame(Shift = shifts, PooledMASE = PooledMASE, p_value = p_vec)
+results <- data.frame(Shift = shifts, PooledMASE = PooledMASE)
 write.csv(results, "output/results.csv",row.names = FALSE)
 
 opt_shift_idx <- which.min(PooledMASE)
@@ -171,12 +150,11 @@ sink("output/repair_summary.txt")
 cat("=== REPAIR SUMMARY ===\n\n")
 cat("Optimal shift:                               ", shifts[opt_shift_idx], "\n")
 cat("Min pooled MASE:                             ", round(min(PooledMASE), 4), "\n")
-cat("p-value (MASE < null):                       ", round(p_vec[opt_shift_idx], 4), "\n")
-cat("p-value (MASE > null):                       ", round(1 - p_vec[opt_shift_idx], 4), "\n")
+cat("Complete missing periods (count):            ", total_missing_periods, "\n")
+cat("Complete missing periods (%):                ", pct_missing_periods, "\n")
 cat("Longest NA gap in irregular series:          ", longest_na_run(my_spatial_ts_orig[[d]][k_start:k_end]), "\n")
 cat("Missing % in irregular series:               ", round(sum(is.na(my_spatial_ts_orig[(k_start:k_end), d])) / (k_end - k_start + 1) * 100, 2), "%\n")
 cat("Missing % in window:                         ", round(percent_missing, 2), "%\n")
-cat("MCAR test p-value:                           ", round(mcar_pval, 4), "\n")
 cat("Avg between-series correlation in window:    ", round(avg_cor, 4), "\n")
 sink()
 
@@ -185,20 +163,20 @@ sink()
 ylim=c(0,9) #Adjust as necessary
 x=c(-k_t:k_t)
 
-png(filename = "output/plot.png", width = 800, height = 600)
+png(filename = "output/pooledMASE_plot.png", width = 800, height = 600)
 plot(x, PooledMASE, type = "l", xlab = "", ylab="", main="", xaxt="n", yaxs="i", ylim=ylim,cex.axis=1.5)
 mytitle=expression("Evaluation of pooled MASE by degree of shift in s"^(q))
 mtext(side=3, line=1.5, cex=1.5, mytitle)
 title(ylab="Pooled MASE", line=2.5,cex.lab =1.5 )
 title(xlab="Periods shifted (q)", line=3,cex.lab=1.5)
 axis(1, at=c(-k_t,shifts[opt_shift_idx],k_t),cex.axis=1.5)
-abline(h = null, lty = 3)
+abline(h = 1, lty = 3)
 abline(v=0, lty=3)
 dev.off()
 
 #Note: If you are unhappy with the results (e.g. if optimal shift is associated with a pooled MASE significantly greater than 1), then re-run the algorithm using a higher value of k_t.  Otherwise proceed with repair of full multivariate set.
 
-##### 9.Repair irregular pattern in multivariate data ########
+##### 8.Repair irregular pattern in multivariate data ########
 
 sheetnames <- readxl::excel_sheets(file_path)
 j=length(sheetnames)
@@ -228,7 +206,7 @@ writexl::write_xlsx(
   path = "output/my_spatial_ts_repaired.xlsx"
 )
 
-## 10.Assess improvement in data similarity between spatial series ####
+## 9.Assess improvement in data similarity between spatial series ####
 
 # Empty list to store columns
 col_list <- list()

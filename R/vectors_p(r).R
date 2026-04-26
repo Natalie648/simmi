@@ -71,21 +71,44 @@ generate_pr_imputed <- function(my_spatial_ts,
   df[na_start:na_end, 1] <- NA
   
   # -----------------------------------------------------------------
-  # 5. Determine percentage of data missingness in resulting data frame
+  # 5. Produce matrix plot to explore patterns of missingness in resulting data frame
+  # -----------------------------------------------------------------
+  
+  png("output/missingness_plot.png", width = 1200,
+      height = 1200,
+      res = 300)
+  
+  par(mar = c(0, 0, 0, 0))   # remove inner margins
+  par(oma = c(0, 0, 0, 0))   # remove outer margins
+  
+  # Select only numeric columns
+  num_df <- df[sapply(df, is.numeric)]
+  
+  VIM::matrixplot(num_df,
+             xaxt = "n",
+             xlab = "",yaxt = "n",
+             ylab = "",xes = FALSE)
+  
+  dev.off()
+  
+  # -----------------------------------------------------------------
+  # 6. Determine percentage of data missingness in resulting data frame
   # -----------------------------------------------------------------
   
   total_cells <- nrow(df) * ncol(df)
   missing_cells <- sum(is.na(df))
   percent_missing <- round((missing_cells / total_cells) * 100, 1)
+ 
+   total_missing_periods <- df %>%
+    mutate(all_missing = if_all(where(is.numeric), is.na)) %>%
+    summarise(x = sum(all_missing)) %>%
+    pull(x)
   
-  # -----------------------------------------------------------------
-  # 6. Perform Little's MCAR test on numeric variables
-  # -----------------------------------------------------------------
+  pct_missing_periods <- df %>%
+    mutate(all_missing = if_all(where(is.numeric), is.na)) %>%
+    summarise(x = mean(all_missing) * 100) %>%
+    pull(x)
   
-  # Select only numeric columns
-  num_df <- df[sapply(df, is.numeric)]
-  mcar_test <- naniar::mcar_test(num_df)
-  mcar_pval <- mcar_test$p.value
   
   # -----------------------------------------------------------------
   # 7. Determine strength of between-series correlation in the data frame
@@ -134,7 +157,8 @@ generate_pr_imputed <- function(my_spatial_ts,
   return(list(
     Pr_imputed      = Pr_imputed,
     percent_missing = percent_missing,
-    mcar_pval = mcar_pval,
+    total_missing_periods = total_missing_periods,
+    pct_missing_periods = pct_missing_periods,
     avg_cor = avg_cor
   ))
 }
