@@ -41,7 +41,7 @@ generate_pr_imputed <- function(my_spatial_ts,
     df[, c(2:num_numeric), drop = FALSE],
     n = -p:p,
     type = "shift",
-    give.names = TRUE
+    give.names = FALSE
   )
   
   non_numeric <- df[, !sapply(df, is.numeric), drop = FALSE]
@@ -78,16 +78,16 @@ generate_pr_imputed <- function(my_spatial_ts,
       height = 1200,
       res = 300)
   
-  par(mar = c(0, 0, 0, 0))   # remove inner margins
-  par(oma = c(0, 0, 0, 0))   # remove outer margins
+  par(cex.axis = 0.6,  # shrink axis tick labels
+      cex.lab  = 0.7)  # shrink axis titles
+  
+ #par(mar = c(0, 0, 0, 0))   # remove inner margins
+ #par(oma = c(0, 0, 0, 0))   # remove outer margins
   
   # Select only numeric columns
   num_df <- df[sapply(df, is.numeric)]
   
-  VIM::matrixplot(num_df,
-             xaxt = "n",
-             xlab = "",yaxt = "n",
-             ylab = "",xes = FALSE)
+  VIM::matrixplot(num_df, ylab="Time period")
   
   dev.off()
   
