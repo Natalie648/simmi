@@ -1,5 +1,9 @@
 # Shift Identification Mechanism via Multiple Imputation, for Spatial Time-Series Repair
 
+```         
+[![DOI](https://zenodo.org/badge/1186094656.svg)](https://doi.org/10.5281/zenodo.19909376)
+```
+
 ## Overview
 
 This project implements a workflow for returning a sequence of displaced attribute values to their true time points, within spatially-correlated sensor data that exhibits irregular pattern due to timestamp error. The workflow has been specifically developed for application to multivariate air monitoring data, though may be generalizable to other forms of spatially-correlated time series too.
